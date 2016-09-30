@@ -204,8 +204,6 @@ opt_pack(false) --> [].
 opt_pack(true)  --> state(T0, T1),
     { phrase(pack_tokens(T1), T0) }.
 
-
-
 %% POST PROCESSING
 
 %% Convert tokens to alternative representations.
@@ -239,9 +237,9 @@ tokens([T])    --> token(T), call(eos), !.
 tokens([T|Ts]) --> token(T), tokens(Ts).
 %% tokens(_)   --> {length(L, 200)}, L, {format(L)}, halt, !. % For debugging.
 
-token(word(W))     --> word(W), call(eos), !.
-token(word(W))," " --> word(W), " ".
-token(word(W)), C  --> word(W), (punct(C) ; cntrl(C) ; nasciis(C)).
+token(T)     --> term(T), call(eos), !.
+token(T)," " --> term(T), " ".
+token(T), C  --> term(T), (punct(C) ; cntrl(C) ; nasciis(C)).
 token(spc(S))      --> spc(S).
 token(punct(P))    --> punct(P).
 token(cntrl(C))    --> cntrl(C).
@@ -253,14 +251,24 @@ spc(" ") --> " ".
 sep --> ' '.
 sep --> call(eos), !.
 
-word(W) --> csyms(W).
+num(num(N))  --> digits(N).
 
-csyms([L])    --> csym(L).
-csyms([L|Ls]) --> csym(L), csyms(Ls).
+digits([D])    --> cdigit(D).
+digits([D|Ds]) --> cdigit(D),!,digits(Ds).
 
-csym(L)       --> [L], {code_type(L, csym)}.
+cdigit(D) --> [D], {code_type(D, digit)}.
 
+term(T) --> word(T); num(T).
 
+word(word(W)) --> csymfs(W).
+
+csymfs([L])    --> csymf(L).
+csymfs([L|Ls]) --> csymf(L),!,csyms(Ls).
+csyms([])      --> [].
+csyms([L|Ls])  --> csym(L), csyms(Ls).
+
+csymf(L)       --> [L],{code_type(L, csymf)}.
+csym(L)        --> [L], {code_type(L, csym)}.
 % non ascii's
 nasciis([C])     --> nascii(C), (call(eos), !).
 nasciis([C]),[D] --> nascii(C), [D], {D < 127}.
